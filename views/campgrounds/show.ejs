@@ -1,39 +1,59 @@
 <% layout('/layouts/boilerplate') %> 
 
-<div class="d-flex justify-content-center">  <!--added by me for styles-->
-<div class="  card col-6 mb-3" style="width: 28rem;">
-  <img class="card-img-top" src="<%= campground.image %> " alt="image">
-  <div class="card-body">
-    <h5 class="card-title"><%= campground.title %></h5>
-    <p class="card-text"><%= campground.description %></p>
-     </div>
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item"><%= campground.location %></li>
-      <li class="list-group-item">Price: <%= campground.price %> $</li>
-      
-      
-    </ul>
+<!-- <div class="d-flex justify-content-center">  added by me for styles -->
+  <div class="row ">
+    <div class="col-6  offset-3">
+      <div class="  card  mb-3" >
+             <img class="card-img-top" src="<%= campground.image %> " alt="image">
+             <div class="card-body">
+                 <h5 class="card-title"><%= campground.title %></h5>
+                 <p class="card-text"><%= campground.description %></p>
+             </div>
+             <ul class="list-group list-group-flush">
+                 <li class="list-group-item"><%= campground.location %></li>
+                 <li class="list-group-item">Price: <%= campground.price %> $</li>
+             </ul>
    
-    <div class="card-body">
-      <a class=" card-link btn btn-info"href="/campgrounds">All Campgrounds</a>
-      <a class="btn btn-warning d-inline" href="/campgrounds/<%=campground._id%>/edit">Edit</a>
-      <form class="d-inline" action="/campgrounds/<%=campground._id%>?_method=DELETE" method="POST">
-        <button class="btn btn-danger">Delete</button>
-      </form>
-    
-    </div>
+             <div class="card-body">
+                 <a class=" card-link btn btn-info"href="/campgrounds">All Campgrounds</a>
+                 <a class="btn btn-warning d-inline" href="/campgrounds/<%=campground._id%>/edit">Edit</a>
+                 <form class="d-inline" action="/campgrounds/<%=campground._id%>?_method=DELETE" method="POST">
+                 <button class="btn btn-danger">Delete</button>
+                 </form>
+             </div>
 
-    <div class="card-footer text-muted">
-      2 days ago
-    </div>
+             <div class="card-footer text-muted">2 days ago</div>
+       </div>
 
-    
-    
-    
+     
+       
+       <!-- <div class="d-flex justify-content-center"></div> -->
+                  <h2>Submit Review</h2>
+                  <form action="/campgrounds/<%= campground._id %>/reviews" method="post" class="mb-3 validated-form" novalidate>
+                    <div class="mb-3 ">
+                    <label class="form-label" for="rating">Rating</label>
+                    <input type="range" class="form-range" name="review[rating]" id="rating" min="1" max="5" required></textarea>
+                 </div>
+                    <div class="mb-3 col-12">
+                       <label class="form-label" for="body">Review</label>
+                       <textarea class="form-control" name="review[body]" id="body" cols="30" rows="5" required></textarea>
+                       <div class="valid-feedback">
+                        Looks good
+                      </div>
+                      </div>
+                      <br><button class="btn btn-success">submit review</button>
+                 </form>
+         <!-- </div> -->  
+      <!-- </div> -->
+    </div> 
   </div>
-</div>
 
-</div>
+
+
+
+
+
+
 
 
     

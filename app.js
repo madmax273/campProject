@@ -8,6 +8,7 @@ const ExpressError=require('./utils/expressError');     //For ACQUIRING THE ERRO
 const catchAsync=require('./utils/catchAsync');         //FOR ACQUIRING THE CATCHASYNC WRAPPER FUNCTION TO CATCH THE ERROR 
 const joi=require('joi');                               //FOR AQUIRING THE PACKAGES WHICH WILL HANDLE THE VALIDATION ERROR WITH THE HELP OF JOI
 const {campgroundSchema}=require('./Schemas');          //FOR REQUIRING THE SCHEMA THAT WE HAVE CREATED FOR DOING THE SERVER SIDE VALIDATION
+const Review=require('./models/review');                      //FOR REQUIRING THE REVIEW MODEL THAT WE CREATED TO INTEGRATE THE CAMPGROUNDS WITHIN IT AS A REFERENCE ID
 
 mongoose.connect('mongodb://127.0.0.1:27017/yelp-camp', {
     useNewUrlParser: true,
@@ -50,6 +51,15 @@ app.get('/', (req, res) => {
     res.render('home')
 });
 
+//POST REQUEST FOR SUBMITTING THE BODY OF THE REVIEW TAHT WE GET FROM SHOW PAGE OG CAMPGROUNDS
+app.post('/campgrounds/:id/reviews',catchAsync(async(req,res,next)=>{
+const campground=await Campground.findById(req.params.id);
+const review=new Review(req.body.review);
+campground.reviews.push(review);
+await review.save();
+await campground.save();
+res.redirect(`/campgrounds/${campground._id}`);
+}))
 
 //READ
 app.get('/campgrounds', catchAsync(async (req, res,next) => {
