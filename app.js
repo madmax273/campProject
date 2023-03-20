@@ -7,7 +7,7 @@ const ejsMate=require('ejs-mate');
 const ExpressError=require('./utils/expressError');     //For ACQUIRING THE ERROR HANDELER CLASS WHICH WE HAD MADE
 const catchAsync=require('./utils/catchAsync');         //FOR ACQUIRING THE CATCHASYNC WRAPPER FUNCTION TO CATCH THE ERROR 
 const joi=require('joi');                               //FOR AQUIRING THE PACKAGES WHICH WILL HANDLE THE VALIDATION ERROR WITH THE HELP OF JOI
-const {campgroundSchema}=require('./Schemas');          //FOR REQUIRING THE SCHEMA THAT WE HAVE CREATED FOR DOING THE SERVER SIDE VALIDATION
+const {campgroundSchema,reviewSchema}=require('./Schemas');          //FOR REQUIRING THE SCHEMA THAT WE HAVE CREATED FOR DOING THE SERVER SIDE VALIDATION
 const Review=require('./models/review');                      //FOR REQUIRING THE REVIEW MODEL THAT WE CREATED TO INTEGRATE THE CAMPGROUNDS WITHIN IT AS A REFERENCE ID
 
 mongoose.connect('mongodb://127.0.0.1:27017/yelp-camp', {
@@ -32,7 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
 
 
-const validateCampground=(req,res,next)=>{                      //THIS FUNCTIONS CANTAINS THE MIDDLE WARE FOR CHECKING THE SERBER SIDE VALIDATION ERROR HANDLING IF WE HAD USED APP.USE IT WOULD RUN EVERYTIME
+const validateCampground=(req,res,next)=>{                      //THIS FUNCTIONS CANTAINS THE MIDDLE WARE FOR CHECKING THE SERVER SIDE VALIDATION ERROR HANDLING IF WE HAD USED APP.USE IT WOULD RUN EVERYTIME
 
     
     const {error}=campgroundSchema.validate(req.body);          //VALIDATING THAT THE DATA FOR EVERY CONTENT IS PRESENT IN THE REQ BODY
@@ -47,18 +47,43 @@ const validateCampground=(req,res,next)=>{                      //THIS FUNCTIONS
 }
 
 
+const validateReview=(req,res,next)=>{                      //THIS FUNCTIONS CANTAINS THE MIDDLE WARE FOR CHECKING THE SERVER SIDE VALIDATION ERROR HANDLING FOR REVIEWS IF WE HAD USED APP.USE IT WOULD RUN EVERYTIME
+
+    
+    const {error}=reviewSchema.validate(req.body);          //VALIDATING THAT THE DATA FOR EVERY CONTENT IS PRESENT IN THE REQ BODY
+    if(error){                                                  //IF ANY ERROR IS PRESENT IT WILL BE RECTIFIED AND THE 
+        const msg=error.details.map(el=>el.message).join(',')   //TO MAKE THE ERROR INTO A SINGLE STRING
+        throw new ExpressError(msg,400)                         //CONTROL WILL BE SENT TO OUR ERROR HANDLER
+    }
+    else
+    { 
+        next();                                                 //IF NO ERROR THEN THE CONTROL WILL BE SENT TO THE NEXT ROUTE HANDELER AS WE HAVE USED NEXT() HERE SINCE THIS IS FOR REVIEWS IF NO ERRORS ARE FIND IT WILL GO TO POST ROUTE SEE BELOW 
+    }
+}
+
+
+
+
 app.get('/', (req, res) => {
     res.render('home')
 });
 
 //POST REQUEST FOR SUBMITTING THE BODY OF THE REVIEW TAHT WE GET FROM SHOW PAGE OG CAMPGROUNDS
-app.post('/campgrounds/:id/reviews',catchAsync(async(req,res,next)=>{
+app.post('/campgrounds/:id/reviews',validateReview,catchAsync(async(req,res,next)=>{
 const campground=await Campground.findById(req.params.id);
 const review=new Review(req.body.review);
 campground.reviews.push(review);
 await review.save();
 await campground.save();
 res.redirect(`/campgrounds/${campground._id}`);
+}))
+
+//DELETE REQUEST FOR DELETING A REVIEW AS WELL AS ITS REFERENCE IN THE CAMPGROUNDS
+app.delete('/campgrounds/:id/reviews/:reviewId',catchAsync(async(req,res)=>{
+    const {id,reviewId}=req.params;
+    await Campground.findByIdAndUpdate(id,{ $pull:{reviews:reviewId}});     //TO DELETE THE REFERNCE OF A PARTICULAR REVIEW IN CAMPGROUND
+    await Review.findByIdAndDelete(reviewId);
+    res.redirect(`/campgrounds/${id}`);
 }))
 
 //READ
@@ -72,7 +97,7 @@ app.get('/campgrounds/new', (req, res) => {
     res.render('campgrounds/new');
 })
 
-//REQUEST SERVING FORM FOR CREATE NEW
+//REQUEST SERVING FORM FOR CREATE NEW CAMPGROUND
 app.post('/campgrounds', validateCampground, catchAsync(async (req, res,next) => {
     const campground = new Campground(req.body.campground);
     await campground.save();
@@ -81,7 +106,8 @@ app.post('/campgrounds', validateCampground, catchAsync(async (req, res,next) =>
 
 //READ SINGLE 
 app.get('/campgrounds/:id', catchAsync(async (req, res,next) => {
-    const campground = await Campground.findById(req.params.id)
+    const campground = await Campground.findById(req.params.id).populate('reviews');  //HERE reviews as we have used in schema of campground
+    
     res.render('campgrounds/show', { campground });
 }));
 
@@ -106,7 +132,7 @@ app.delete('/campgrounds/:id', catchAsync(async (req, res,next) => {   //CATCHAS
 }))
 
 //ERROR HANDLER
-app.use('*',(req,res,next)=>{
+app.all('*',(req,res,next)=>{
     next(new ExpressError("page not found",404));
 })
 
